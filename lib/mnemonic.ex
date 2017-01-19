@@ -1,13 +1,9 @@
 defmodule Mnemonic do
   @ets_table :mnemonic
-
-  driver_type = Application.get_env(:mnemonic, :driver)
-  driver = Application.get_env(:mnemonic_drivers, driver_type)
-
-  defdelegate load, to: driver
+  @driver Application.get_env(:mnemonic, :driver)
 
   def start do
-    load()
+    apply(@driver, :load, [])
     |> cache_memory()
     {:ok}
   end
@@ -24,18 +20,14 @@ defmodule Mnemonic do
       try do
         memory = find_from_memory(List.first(keys))
 
-        if length(memory) > 0 do
-          value = get_in memory, keys
-          if !is_nil(value), do: value, else: default
-        else
-          default
-        end
+        value = get_in(memory, List.delete_at(keys, 0))
+        if !is_nil(value), do: value, else: default
       rescue
         FunctionClauseError -> default
       end
     else
       memory = find_from_memory(key)
-      if length(memory) > 0, do: memory, else: default
+      if !is_nil(memory), do: memory, else: default
     end
   end
 
@@ -74,7 +66,7 @@ defmodule Mnemonic do
       |> List.first()
       |> elem(1)
     rescue
-      ArgumentError -> []
+      ArgumentError -> nil
     end
   end
 

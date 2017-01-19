@@ -1,4 +1,6 @@
-defmodule Mnemonic.Ecto.Data do
+defmodule Mnemonic.Ecto.Driver do
+  @behaviour Mnemonic.Driver
+
   alias Mnemonic.{Repo, Ecto.Schema}
 
   def load do
