@@ -26,23 +26,24 @@ defmodule Mnemonic do
   end
 
   @doc """
-  Insert or update the stored memory. If the key does not exists, it will insert a new key and value into the memory.
+  Insert or update the stored memory. If the key does not exists, it will insert a new key and value into the memory. The updated memories will only be available in memory. If persist value is ```true``` changes will be stored into the drive data storage.
 
   ##Example
       Mnemonic.put "foo.bar", "new_value"
   """
-  def put(key, value) do
+  def put(key, value, persist \\ false) do
     if !is_nil(get(key)) do
       replace_existing_memory(key, value)
-      {:ok}
     else
       cache_memory(key, value)
-      {:ok}
     end
+
+    if persist, do: persist()
+    {:ok}
   end
 
   def forget(key) do
-
+    key
   end
 
   @doc """
@@ -56,8 +57,17 @@ defmodule Mnemonic do
     {:ok}
   end
 
-  def persist do
+  @doc """
+  Store memories in ETS into driver data storage.
 
+  ##Example
+      Mnemonic.persist
+  """
+  def persist do
+    :ets.match(@ets_table, :"$1")
+    |> List.flatten()
+    |> Enum.each(fn(memory) -> apply(@driver, :store, [memory]) end)
+    {:ok}
   end
 
   defp create_cache(memories) do
@@ -101,7 +111,7 @@ defmodule Mnemonic do
   end
   defp traverse_memory(nil, _, default),
     do: default
-  defp traverse_memory(memory, key, default) do
+  defp traverse_memory(memory, _, default) do
     if !is_nil(memory), do: memory, else: default
   end
 
@@ -116,10 +126,10 @@ defmodule Mnemonic do
     |> replace(nested_keys, value, key)
   end
 
-  defp replace(memory, key, value, root_key \\ nil) when is_list(key) do
+  defp replace(memory, key, value, root_key) when is_list(key) do
     new_memory = put_in(memory, key, value)
     cache_memory(root_key, new_memory)
   end
-  defp replace(memory, key, value, _),
+  defp replace(_, key, value, _),
     do: cache_memory(key, value)
 end
