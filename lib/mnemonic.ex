@@ -1,6 +1,6 @@
 defmodule Mnemonic do
   @ets_table :mnemonic
-  
+
   driver_type = Application.get_env(:mnemonic, :driver)
   driver = Application.get_env(:mnemonic_drivers, driver_type)
 
@@ -12,14 +12,24 @@ defmodule Mnemonic do
     {:ok}
   end
 
+  @doc """
+  Retrieve value from stored memory. If no value is found for particular key, default value will be returned. Dot notation can be used to retrieve nested value.
+
+  ##Example
+      Mnemonic.get "foo.bar.baz"
+  """
   def get(key, default \\ nil) do
     if nested_elem?(key) do
       keys = String.split(key, ".")
       try do
         memory = find_from_memory(List.first(keys))
-        |> get_in(List.delete_at(keys, 0))
 
-        if !is_nil(memory), do: memory, else: default
+        if length(memory) > 0 do
+          value = get_in memory, keys
+          if !is_nil(value), do: value, else: default
+        else
+          default
+        end
       rescue
         FunctionClauseError -> default
       end
@@ -29,15 +39,21 @@ defmodule Mnemonic do
     end
   end
 
-  def put do
+  def put(key, value) do
 
   end
 
-  def forget do
+  def forget(key) do
 
   end
 
   def flush do
+    :ets.delete_all_objects(@ets_table)
+
+    {:ok}
+  end
+
+  def persist do
 
   end
 
@@ -53,9 +69,13 @@ defmodule Mnemonic do
   end
 
   defp find_from_memory(key) do
-    :ets.lookup(@ets_table, key)
-    |> List.first()
-    |> elem(1)
+    try do
+      :ets.lookup(@ets_table, key)
+      |> List.first()
+      |> elem(1)
+    rescue
+      ArgumentError -> []
+    end
   end
 
   defp nested_elem?(key),
