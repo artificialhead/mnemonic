@@ -1,7 +1,10 @@
 defmodule Mnemonic do
   @ets_table :mnemonic
+  
+  driver_type = Application.get_env(:mnemonic, :driver)
+  driver = Application.get_env(:mnemonic_drivers, driver_type)
 
-  defdelegate load, to: Mnemonic.Ecto.Data
+  defdelegate load, to: driver
 
   def start do
     load()
