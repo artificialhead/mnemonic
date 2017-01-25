@@ -25,7 +25,7 @@ defmodule Mnemonic.Mixfile do
 
   defp deps do
     [
-      {:poison, "~> 3.1"},
+      {:poison, "~> 2.0"},
       {:mariaex, "~> 0.8"},
       {:ecto, "~> 2.1"}
     ]
